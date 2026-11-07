@@ -1,0 +1,67 @@
+## Visual Studio user settings and cache
+.vs/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+
+## Build results and output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Tt]emp/
+[Tt]mp/
+_ReSharper*/
+*.VC.db
+*.opensdf
+*.sdf
+*.opendb
+*.cache
+
+## .NET Test Results
+[Tt]est[Rr]esult*/
+*.trx
+*.xml
+*.coverage
+*.coveragexml
+
+## NuGet Packages
+*.nupkg
+*.snupkg
+# The packages folder can be ignored if you are using package restore
+**/packages/*
+# Except built-in tools (NuGet v2)
+!**/packages/build/
+# Restoring offline packages
+*.feedsb
+
+## Backups and crash dumps
+*.bak
+*~
+*.lock
+*.pid
+*.seed
+*.log
+*.retry
+crash.dump*
+
+## OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
