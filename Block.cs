@@ -8,4 +8,7 @@ public class Block
   public string Author { get; set; }
   public string Hash { get; set; }
   public string PreviousHash { get; set; }
+  public int Nonce { get; set; }
+  public double MiningDuration { get; set; }
+  public int DifficultyAtMining { get; set; }
 }
