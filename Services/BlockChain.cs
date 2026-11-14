@@ -1,4 +1,6 @@
-namespace BlockChainSample;
+using BlockChainSample.Models;
+
+namespace BlockChainSample.Services;
 
 public class BlockChain
 {
@@ -23,7 +25,7 @@ public class BlockChain
     {
       Index = 0,
       TimeStamp = DateTime.UtcNow,
-      Data = "",
+      Transactions = [],
       PreviousHash = "0",
       DifficultyAtMining = Difficulty
     };
@@ -32,7 +34,7 @@ public class BlockChain
     Chain.Add(genesysBlock);
   }
 
-  public void AddBlock(string data)
+  public void AddBlock(List<Transaction> transactions)
   {
     Console.WriteLine($"Current difficulty {Difficulty}");
     var lastBlock = Chain[^1];
@@ -40,7 +42,7 @@ public class BlockChain
     {
       Index = lastBlock.Index + 1,
       TimeStamp = DateTime.UtcNow,
-      Data = data,
+      Transactions = [.. transactions],
       PreviousHash = lastBlock.Hash,
       DifficultyAtMining = Difficulty
     };
@@ -58,14 +60,13 @@ public class BlockChain
     {
       var currentBlock = Chain[i];
       var previousBlock = Chain[i - 1];
+
       if (currentBlock.Hash != _hashingService.ComputeHash(currentBlock))
-      {
         return false;
-      }
+
       if (currentBlock.PreviousHash != previousBlock.Hash)
-      {
         return false;
-      }
+
       if (currentBlock.Hash.Substring(0, currentBlock.DifficultyAtMining) != new string('0', currentBlock.DifficultyAtMining))
         return false;
     }
@@ -79,7 +80,7 @@ public class BlockChain
       var currentBlock = Chain[i];
       var previousBlock = Chain[i - 1];
 
-      if (currentBlock.Data == string.Empty)
+      if (!currentBlock.Transactions.Any())
         continue;
 
       if (currentBlock.Hash != _hashingService.ComputeHash(currentBlock))
@@ -95,11 +96,25 @@ public class BlockChain
   }
 
   // TODO
-  public void RepairChain(int startIndex)
+  public bool RepairChain(int startIndex)
   {
+    if (startIndex >= Chain.Count || startIndex < 0) return false;
+
     var chainToRepair = Chain[startIndex..];
+    string? previousHash = null;
+    int conntOfRepaired = 0;
 
+    foreach (var block in chainToRepair)
+    {
+      if (previousHash != null) block.PreviousHash = previousHash;
 
+      _miningService.MineBlock(block, block.DifficultyAtMining);
+      previousHash = block.Hash;
+      conntOfRepaired++;
+    }
+
+    Console.WriteLine($"Count of repaired block: {conntOfRepaired}");
+    return true;
   }
 
   private void AdjustDifficulty()
@@ -120,7 +135,7 @@ public class BlockChain
     }
   }
 
-  public Block? FindByIndex(int index)
+  public Block? FindBlockByIndex(int index)
   {
     if (index < 0 || Chain.Count <= index)
     {
@@ -130,10 +145,40 @@ public class BlockChain
     return Chain[index];
   }
 
+  public (Transaction transaction, int blockIndex)? FindTransactionById(Guid id)
+  {
+    foreach (var block in Chain)
+      foreach (var transaction in block.Transactions)
+        if (transaction.Id == id) return (transaction, block.Index);
+
+    return null;
+  }
+
+  public List<Transaction> GetAllUserTransactions(string user, string? filterBy = null)
+  {
+    var userTransactions = new List<Transaction>();
+
+    foreach (var block in Chain)
+    {
+      foreach (var transaction in block.Transactions)
+      {
+        bool isFromMatch = transaction.From == user && (filterBy == "" || filterBy == "from");
+        bool isToMatch = transaction.To == user && (filterBy == "" || filterBy == "to");
+
+        if (isFromMatch || isToMatch)
+        {
+          userTransactions.Add(transaction);
+        }
+      }
+    }
+
+    return userTransactions;
+  }
+
   public Block? FindByEvent(string text)
   {
     foreach (Block block in Chain)
-      if (block.Data.Contains(text))
+      if (block.Transactions.Any(t => t.From.Contains(text) || t.To.Contains(text)))
         return block;
 
     return null;

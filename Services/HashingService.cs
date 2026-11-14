@@ -1,13 +1,15 @@
 using System.Security.Cryptography;
 using System.Text;
+using BlockChainSample.Models;
 
-namespace BlockChainSample;
+namespace BlockChainSample.Services;
 
 public class HashingService
 {
   public string ComputeHash(Block block, int? nonce = null)
   {
-    var blockData = $"{block.Index}{block.TimeStamp}{block.Data}{block.Author}{block.PreviousHash}{nonce ?? block.Nonce}{block.DifficultyAtMining}";
+    var transactionRawData = string.Concat(block.Transactions.Select(t => t.ToRaw()));
+    var blockData = $"{block.Index}{block.TimeStamp}{transactionRawData}{block.PreviousHash}{nonce ?? block.Nonce}";
 
     return ComputeHash(blockData);
   }

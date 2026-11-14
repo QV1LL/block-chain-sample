@@ -1,4 +1,6 @@
-namespace BlockChainSample;
+using BlockChainSample.Models;
+
+namespace BlockChainSample.Services;
 
 public class BlockChainDisplayService
 {
@@ -9,10 +11,15 @@ public class BlockChainDisplayService
     {
       Console.WriteLine($"Index: {block.Index}");
       Console.WriteLine($"Timestamp: {block.TimeStamp}");
-      Console.WriteLine($"Data: {block.Data}");
       Console.WriteLine($"Previous Hash: {block.PreviousHash}");
       Console.WriteLine($"Hash: {block.Hash}");
       Console.WriteLine($"Nonce: {block.Nonce}");
+      Console.WriteLine($"Mining duration: {block.MiningDuration} seconds");
+      Console.WriteLine("Transactions: ");
+      foreach (var tx in block.Transactions)
+      {
+        Console.WriteLine($" - {tx.ToRaw()}");
+      }
       Console.WriteLine(new string('-', 50));
     }
   }

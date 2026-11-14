@@ -1,6 +1,7 @@
 using System.Diagnostics;
+using BlockChainSample.Models;
 
-namespace BlockChainSample;
+namespace BlockChainSample.Services;
 
 public class MiningService(HashingService hashingService)
 {
@@ -55,7 +56,7 @@ public class MiningService(HashingService hashingService)
     }
     catch (OperationCanceledException)
     {
-      Console.WriteLine("Parallel loop was canceled.");
+      // Hash found
     }
   }
 }
