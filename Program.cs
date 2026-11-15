@@ -1,15 +1,24 @@
-﻿
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using BlockChainSample.Models;
 using BlockChainSample.Services;
+
+namespace BlockChainSample;
 
 public class Program
 {
   public static void Main()
   {
+    var hashingService = new HashingService();
+    var miningService = new MiningService(hashingService);
     var transactionService = new TransactionService();
-    var blockChain = new BlockChain();
     var displayService = new BlockChainDisplayService();
+
+    var blockChain = new BlockChain(
+        hashingService,
+        miningService,
+        transactionService,
+        displayService
+    );
 
     var pendingTransactions = new List<Transaction>();
 
@@ -24,7 +33,9 @@ public class Program
       Console.WriteLine("4. Get transaction by id");
       Console.WriteLine("5. Get transactions by username");
       Console.WriteLine("6. Repair blockchain");
-      Console.WriteLine("7. Exit");
+      Console.WriteLine("7. Broke random block");
+      Console.WriteLine("8. Check blockchain");
+      Console.WriteLine("9. Exit");
       Console.Write("\nSelect an option: ");
 
       string choice = Console.ReadLine()?.Trim();
@@ -130,7 +141,6 @@ public class Program
           break;
 
         case "6":
-          // I didn`t understand what count of tries in mean in task
           Console.WriteLine("Enter an index from where to repair block chain: ");
           var input = Console.ReadLine();
 
@@ -142,12 +152,12 @@ public class Program
           }
 
           var stopwatch = new Stopwatch();
-          var success = blockChain.RepairChain(startIndex);
+          var (success, conntOfTries, conntOfRepaired) = blockChain.RepairChain(startIndex);
           var timeTaken = stopwatch.Elapsed;
 
           if (success)
           {
-            Console.WriteLine($"Chain was repaired, time taken: {timeTaken.Seconds}");
+            Console.WriteLine($"Chain repaired {conntOfRepaired} blocks with {conntOfTries} tries to mine blocks, time taken: {timeTaken.Milliseconds}ms");
             Console.WriteLine($"Is chain valid: {blockChain.IsChainValid()}");
           }
           else
@@ -159,6 +169,22 @@ public class Program
           break;
 
         case "7":
+          var transactions = blockChain.Chain.SelectMany(b => b.Transactions).ToList();
+          var index = Random.Shared.Next(transactions.Count);
+          var randomTransaction = transactions[index];
+
+          randomTransaction.From += "[Modified]";
+          randomTransaction.To += "[Modified]";
+
+          break;
+
+        case "8":
+          Console.WriteLine($"Is chain valid: {blockChain.IsChainValid()}");
+
+          Pause();
+          break;
+
+        case "9":
           Console.WriteLine("\nExiting...");
           return;
 

@@ -4,18 +4,27 @@ namespace BlockChainSample.Services;
 
 public class BlockChain
 {
-  public List<Block> Chain { get; set; }
+  public List<Block> Chain { get; set; } = [];
   private int Difficulty { get; set; } = 1;
   private readonly HashingService _hashingService;
   private readonly MiningService _miningService;
+  private readonly TransactionService _transactionsService;
+  private readonly BlockChainDisplayService _displayService;
+
   private readonly int _adjustmentInterval = 3;
   private readonly int _targetBlockTime = 1;
 
-  public BlockChain()
+  public BlockChain(
+      HashingService hashingService,
+      MiningService miningService,
+      TransactionService transactionService,
+      BlockChainDisplayService displayService)
   {
-    Chain = [];
-    _hashingService = new();
-    _miningService = new(_hashingService);
+    _hashingService = hashingService;
+    _miningService = miningService;
+    _transactionsService = transactionService;
+    _displayService = displayService;
+
     AddGenesysBlock();
   }
 
@@ -36,7 +45,6 @@ public class BlockChain
 
   public void AddBlock(List<Transaction> transactions)
   {
-    Console.WriteLine($"Current difficulty {Difficulty}");
     var lastBlock = Chain[^1];
     var newBlock = new Block
     {
@@ -95,44 +103,27 @@ public class BlockChain
     return null;
   }
 
-  // TODO
-  public bool RepairChain(int startIndex)
+  public (bool isSuccess, int? countOfTries, int? counfOfRepainedBlocks) RepairChain(int startIndex)
   {
-    if (startIndex >= Chain.Count || startIndex < 0) return false;
+    if (startIndex >= Chain.Count || startIndex < 0) return (false, null, null);
 
     var chainToRepair = Chain[startIndex..];
     string? previousHash = null;
-    int conntOfRepaired = 0;
+    int countOfRepaired = 0;
+    int countOfTries = 0;
 
     foreach (var block in chainToRepair)
     {
-      if (previousHash != null) block.PreviousHash = previousHash;
+      previousHash ??= startIndex == 0 ? Chain[0].PreviousHash : Chain[startIndex - 1].Hash;
+      block.PreviousHash = previousHash;
 
       _miningService.MineBlock(block, block.DifficultyAtMining);
       previousHash = block.Hash;
-      conntOfRepaired++;
+      countOfTries += block.Nonce;
+      countOfRepaired++;
     }
 
-    Console.WriteLine($"Count of repaired block: {conntOfRepaired}");
-    return true;
-  }
-
-  private void AdjustDifficulty()
-  {
-    var recent = Chain.Where(b => b.Index > 0).TakeLast(_adjustmentInterval).ToList();
-
-    if (recent.Count == 0) return;
-
-    var avgTime = recent.Average(b => b.MiningDuration);
-
-    if (avgTime < _targetBlockTime)
-    {
-      Difficulty++;
-    }
-    else if (avgTime > _targetBlockTime)
-    {
-      Difficulty = Math.Max(1, Difficulty - 1);
-    }
+    return (true, countOfTries, countOfRepaired);
   }
 
   public Block? FindBlockByIndex(int index)
@@ -182,5 +173,42 @@ public class BlockChain
         return block;
 
     return null;
+  }
+
+  private string? ValidateTransactions(IEnumerable<Transaction> transactions)
+  {
+    var existingTransactions = Chain.SelectMany(c => c.Transactions);
+    var ids = existingTransactions.Select(t => t.Id);
+
+    foreach (var transaction in transactions)
+    {
+      var (isValid, errorMessage) = _transactionsService.ValidateTransaction(transaction);
+
+      if (!isValid) return errorMessage;
+
+      if (ids.Contains(transaction.Id)) return $"Transaction with id {transaction.Id} is already exists";
+
+      if (existingTransactions.Contains(transaction)) return "Transaction is already in block chain";
+    }
+
+    return null;
+  }
+
+  private void AdjustDifficulty()
+  {
+    var recent = Chain.Where(b => b.Index > 0).TakeLast(_adjustmentInterval).ToList();
+
+    if (recent.Count == 0) return;
+
+    var avgTime = recent.Average(b => b.MiningDuration);
+
+    if (avgTime < _targetBlockTime)
+    {
+      Difficulty++;
+    }
+    else if (avgTime > _targetBlockTime)
+    {
+      Difficulty = Math.Max(1, Difficulty - 1);
+    }
   }
 }

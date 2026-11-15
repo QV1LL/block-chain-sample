@@ -4,6 +4,10 @@ namespace BlockChainSample.Services;
 
 public class BlockChainDisplayService
 {
+  public void DisplayInfo(string text)
+  {
+    Console.WriteLine($"[{DateTimeOffset.Now}] Message from blockchain: {text}");
+  }
   public void DisplayChain(BlockChain blockChain)
   {
     Console.WriteLine("Blockchain:");
