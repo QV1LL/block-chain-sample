@@ -9,7 +9,7 @@ public class HashingService
   public string ComputeHash(Block block, int? nonce = null)
   {
     var transactionRawData = string.Concat(block.Transactions.Select(t => t.ToRaw()));
-    var blockData = $"{block.Index}{block.TimeStamp}{transactionRawData}{block.PreviousHash}{nonce ?? block.Nonce}";
+    var blockData = $"{block.Index}{block.TimeStamp}{block.DifficultyAtMining}{transactionRawData}{block.PreviousHash}{nonce ?? block.Nonce}";
 
     return ComputeHash(blockData);
   }

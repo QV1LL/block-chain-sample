@@ -18,6 +18,7 @@ public class BlockChainDisplayService
       Console.WriteLine($"Previous Hash: {block.PreviousHash}");
       Console.WriteLine($"Hash: {block.Hash}");
       Console.WriteLine($"Nonce: {block.Nonce}");
+      Console.WriteLine($"Difficulty at mining: {block.DifficultyAtMining}");
       Console.WriteLine($"Mining duration: {block.MiningDuration} seconds");
       Console.WriteLine("Transactions: ");
       foreach (var tx in block.Transactions)
