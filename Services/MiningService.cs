@@ -5,7 +5,6 @@ namespace BlockChainSample.Services;
 
 public class MiningService(HashingService hashingService)
 {
-  private readonly HashingService _hashingService = hashingService;
   private readonly Lock _lock = new();
 
   public void MineBlock(Block block, int difficulty)
@@ -29,7 +28,7 @@ public class MiningService(HashingService hashingService)
 
           while (!options.CancellationToken.IsCancellationRequested)
           {
-            var possibleHash = _hashingService.ComputeHash(block, nonce);
+            var possibleHash = hashingService.ComputeHash(block, nonce);
 
             if (possibleHash.StartsWith(target))
             {

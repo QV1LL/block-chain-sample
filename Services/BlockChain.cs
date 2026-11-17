@@ -1,4 +1,5 @@
 using BlockChainSample.Models;
+using BlockChainSample.Services.Display;
 
 namespace BlockChainSample.Services;
 
@@ -43,8 +44,13 @@ public class BlockChain
     Chain.Add(genesysBlock);
   }
 
-  public void AddBlock(List<Transaction> transactions)
+  public string? AddBlock(List<Transaction> transactions)
   {
+    var errorMessage = ValidateTransactions(transactions);
+
+    if (errorMessage != null)
+      return $"There is an error in transaction while adding block: {errorMessage}";
+
     var lastBlock = Chain[^1];
     var newBlock = new Block
     {
@@ -60,6 +66,8 @@ public class BlockChain
 
     if (newBlock.Index % _adjustmentInterval == 0)
       AdjustDifficulty();
+
+    return null;
   }
 
   public bool IsChainValid()
