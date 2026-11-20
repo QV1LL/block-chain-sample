@@ -2,18 +2,18 @@ using BlockChainSample.Models;
 
 namespace BlockChainSample.Services.Display;
 
-public class BlockChainDisplayService
+public static class BlockChainDisplayService
 {
-  public void DisplayInfo(string text)
+  public static void DisplayInfo(string text)
   {
     Console.WriteLine($"[{DateTimeOffset.Now}] Message from blockchain: {text}");
   }
 
-  public void DisplayTransaction(Transaction transaction)
+  public static void DisplayTransaction(Transaction transaction)
   {
     Console.WriteLine($" - {transaction.ToRaw()}");
   }
-  public void DisplayBlock(Block block)
+  public static void DisplayBlock(Block block)
   {
     Console.WriteLine($"Index: {block.Index}");
     Console.WriteLine($"Timestamp: {block.TimeStamp}");
@@ -28,7 +28,7 @@ public class BlockChainDisplayService
       DisplayTransaction(tx);
     }
   }
-  public void DisplayChain(BlockChain blockChain)
+  public static void DisplayChain(BlockChain blockChain)
   {
     Console.WriteLine("Blockchain:");
     foreach (var block in blockChain.Chain)
@@ -38,7 +38,7 @@ public class BlockChainDisplayService
     }
   }
 
-  public void DisplayDifficultyHistory(BlockChain blockChain)
+  public static void DisplayDifficultyHistory(BlockChain blockChain)
   {
     foreach (Block block in blockChain.Chain)
     {

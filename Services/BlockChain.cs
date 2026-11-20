@@ -1,5 +1,4 @@
 using BlockChainSample.Models;
-using BlockChainSample.Services.Display;
 
 namespace BlockChainSample.Services;
 
@@ -9,8 +8,7 @@ public class BlockChain
   private int Difficulty { get; set; } = 1;
   private readonly HashingService _hashingService;
   private readonly MiningService _miningService;
-  private readonly TransactionService _transactionsService;
-  private readonly BlockChainDisplayService _displayService;
+  private readonly BalanceService _balanceService;
 
   private readonly int _adjustmentInterval = 3;
   private readonly int _targetBlockTime = 1;
@@ -18,13 +16,11 @@ public class BlockChain
   public BlockChain(
       HashingService hashingService,
       MiningService miningService,
-      TransactionService transactionService,
-      BlockChainDisplayService displayService)
+      BalanceService balanceService)
   {
     _hashingService = hashingService;
     _miningService = miningService;
-    _transactionsService = transactionService;
-    _displayService = displayService;
+    _balanceService = balanceService;
 
     AddGenesysBlock();
   }
@@ -44,19 +40,21 @@ public class BlockChain
     Chain.Add(genesysBlock);
   }
 
-  public string? AddBlock(List<Transaction> transactions)
+  public string? AddBlock(List<Transaction> transactions, string minerAddress)
   {
     var errorMessage = ValidateTransactions(transactions);
 
     if (errorMessage != null)
       return $"There is an error in transaction while adding block: {errorMessage}";
 
+    var coinbaseTransaction = Transaction.CreateCoinbaseTransaction(minerAddress, 50);
+
     var lastBlock = Chain[^1];
     var newBlock = new Block
     {
       Index = lastBlock.Index + 1,
       TimeStamp = DateTime.UtcNow,
-      Transactions = [.. transactions],
+      Transactions = [coinbaseTransaction, .. transactions],
       PreviousHash = lastBlock.Hash,
       DifficultyAtMining = Difficulty
     };
@@ -83,7 +81,7 @@ public class BlockChain
       if (currentBlock.PreviousHash != previousBlock.Hash)
         return false;
 
-      if (currentBlock.Hash.Substring(0, currentBlock.DifficultyAtMining) != new string('0', currentBlock.DifficultyAtMining))
+      if (currentBlock.Hash[..currentBlock.DifficultyAtMining] != new string('0', currentBlock.DifficultyAtMining))
         return false;
     }
     return true;
@@ -96,7 +94,7 @@ public class BlockChain
       var currentBlock = Chain[i];
       var previousBlock = Chain[i - 1];
 
-      if (!currentBlock.Transactions.Any())
+      if (currentBlock.Transactions.Count != 0)
         continue;
 
       if (currentBlock.Hash != _hashingService.ComputeHash(currentBlock))
@@ -105,9 +103,10 @@ public class BlockChain
       if (currentBlock.PreviousHash != previousBlock.Hash)
         return (currentBlock, "Incorrect previous hash");
 
-      if (currentBlock.Hash.Substring(0, currentBlock.DifficultyAtMining) != new string('0', currentBlock.DifficultyAtMining))
+      if (currentBlock.Hash[..currentBlock.DifficultyAtMining] != new string('0', currentBlock.DifficultyAtMining))
         return (currentBlock, "Incorrect difficulty");
     }
+
     return null;
   }
 
@@ -153,7 +152,7 @@ public class BlockChain
     return null;
   }
 
-  public List<Transaction> GetAllUserTransactions(string user, string? filterBy = null)
+  public List<Transaction> GetAllUserTransactions(string user, string? filterBy = "")
   {
     var userTransactions = new List<Transaction>();
 
@@ -190,13 +189,23 @@ public class BlockChain
 
     foreach (var transaction in transactions)
     {
-      var (isValid, errorMessage) = _transactionsService.ValidateTransaction(transaction);
+      var (isValid, errorMessage) = TransactionService.ValidateTransaction(transaction);
 
-      if (!isValid) return errorMessage;
+      if (!isValid)
+        return errorMessage;
 
-      if (ids.Contains(transaction.Id)) return $"Transaction with id {transaction.Id} is already exists";
+      if (ids.Contains(transaction.Id))
+        return $"Transaction with id {transaction.Id} is already exists";
 
-      if (existingTransactions.Contains(transaction)) return "Transaction is already in block chain";
+      if (existingTransactions.Contains(transaction))
+        return "Transaction is already in block chain";
+
+      if (!_balanceService.HasSufficientBalance(
+            transaction.From,
+            transaction.Ammount,
+            Chain,
+            transactions.Where(t => t.Id != transaction.Id)))
+        return "Transaction have not enough ammount of coin";
     }
 
     return null;

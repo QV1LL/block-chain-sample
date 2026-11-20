@@ -11,4 +11,19 @@ public class Block
   public int Nonce { get; set; }
   public double MiningDuration { get; set; }
   public int DifficultyAtMining { get; set; }
+
+  public override string ToString()
+  {
+    return $"""
+    Index: {Index}
+    Timestamp: {TimeStamp}
+    Previous Hash: {PreviousHash}
+    Hash: {Hash}
+    Nonce: {Nonce}
+    Difficulty at mining: {DifficultyAtMining}
+    Mining duration: {MiningDuration} seconds
+    Transactions:
+    {string.Join('\n', Transactions.Select(t => $" --- {t}"))}
+    """;
+  }
 }

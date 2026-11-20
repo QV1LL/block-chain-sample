@@ -10,8 +10,13 @@ public class Transaction(string from, decimal ammount, string to)
   public string To { get; set; } = to;
   public byte[] SenderPublicKey { get; set; }
   public byte[]? Signature { get; set; }
-
   public DateTime TimeStamp { get; set; } = DateTime.Now;
+  public bool IsCoinBase { get; set; } = false;
+
+  public static Transaction CreateCoinbaseTransaction(string to, decimal ammount)
+  {
+    return new Transaction("COINBASE", ammount, to) { IsCoinBase = true };
+  }
 
   public byte[] GetDataToSign()
   {
@@ -27,6 +32,6 @@ public class Transaction(string from, decimal ammount, string to)
 
   public override string ToString()
   {
-    return $"Transaction ID: {Id}, From: {From}, To: {To}, Ammount: {Ammount}, Timestamp: {TimeStamp}";
+    return $"Transaction ID: {Id} | From: {From} | To: {To} | Amount: {Ammount} | Timestamp: {TimeStamp}";
   }
 }
