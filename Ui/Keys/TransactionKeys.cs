@@ -8,5 +8,7 @@ public static class TransactionKeys
   public const string TransactionId = "Transaction.Id";
   public const string FilterBy = "Transaction.FilterBy";
   public const string Username = "Transaction.Username";
+  public const string Transaction = "Transaction";
+  public const string Pending = "Transaction.Pending";
 }
 

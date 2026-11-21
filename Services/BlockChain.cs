@@ -13,6 +13,8 @@ public class BlockChain
   private readonly int _adjustmentInterval = 3;
   private readonly int _targetBlockTime = 1;
 
+  private readonly List<Transaction> _existingTransactions = [];
+
   public BlockChain(
       HashingService hashingService,
       MiningService miningService,
@@ -23,21 +25,6 @@ public class BlockChain
     _balanceService = balanceService;
 
     AddGenesysBlock();
-  }
-
-  private void AddGenesysBlock()
-  {
-    var genesysBlock = new Block
-    {
-      Index = 0,
-      TimeStamp = DateTime.UtcNow,
-      Transactions = [],
-      PreviousHash = "0",
-      DifficultyAtMining = Difficulty
-    };
-
-    _miningService.MineBlock(genesysBlock, Difficulty);
-    Chain.Add(genesysBlock);
   }
 
   public string? AddBlock(List<Transaction> transactions, string minerAddress)
@@ -61,6 +48,7 @@ public class BlockChain
 
     _miningService.MineBlock(newBlock, Difficulty);
     Chain.Add(newBlock);
+    _existingTransactions.AddRange([.. transactions]);
 
     if (newBlock.Index % _adjustmentInterval == 0)
       AdjustDifficulty();
@@ -182,31 +170,37 @@ public class BlockChain
     return null;
   }
 
-  private string? ValidateTransactions(IEnumerable<Transaction> transactions)
+  public string? ValidateTransactions(IEnumerable<Transaction> transactions)
   {
-    var existingTransactions = Chain.SelectMany(c => c.Transactions);
-    var ids = existingTransactions.Select(t => t.Id);
-
     foreach (var transaction in transactions)
     {
-      var (isValid, errorMessage) = TransactionService.ValidateTransaction(transaction);
+      var errorMessage = ValidateTransaction(transaction, transactions);
 
-      if (!isValid)
-        return errorMessage;
-
-      if (ids.Contains(transaction.Id))
-        return $"Transaction with id {transaction.Id} is already exists";
-
-      if (existingTransactions.Contains(transaction))
-        return "Transaction is already in block chain";
-
-      if (!_balanceService.HasSufficientBalance(
-            transaction.From,
-            transaction.Ammount,
-            Chain,
-            transactions.Where(t => t.Id != transaction.Id)))
-        return "Transaction have not enough ammount of coin";
+      if (errorMessage != null) return errorMessage;
     }
+
+    return null;
+  }
+
+  public string? ValidateTransaction(Transaction transaction, IEnumerable<Transaction> transactions)
+  {
+    var (isValid, errorMessage) = TransactionService.ValidateTransaction(transaction);
+
+    if (!isValid)
+      return errorMessage;
+
+    if (_existingTransactions.Any(t => t.Id == transaction.Id))
+      return $"Transaction with id {transaction.Id} is already exists";
+
+    if (_existingTransactions.Contains(transaction))
+      return "Transaction is already in block chain";
+
+    if (!_balanceService.HasSufficientBalance(
+          transaction.From,
+          transaction.Ammount,
+          Chain,
+          transactions.Where(t => t.Id != transaction.Id)))
+      return "Transaction have not enough ammount of coin";
 
     return null;
   }
@@ -227,5 +221,20 @@ public class BlockChain
     {
       Difficulty = Math.Max(1, Difficulty - 1);
     }
+  }
+
+  private void AddGenesysBlock()
+  {
+    var genesysBlock = new Block
+    {
+      Index = 0,
+      TimeStamp = DateTime.UtcNow,
+      Transactions = [],
+      PreviousHash = "0",
+      DifficultyAtMining = Difficulty
+    };
+
+    _miningService.MineBlock(genesysBlock, Difficulty);
+    Chain.Add(genesysBlock);
   }
 }

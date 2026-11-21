@@ -1,6 +1,6 @@
 using BlockChainSample.Models;
 using BlockChainSample.Services;
-using BlockChainSample.Services.Display;
+using BlockChainSample.Ui.Keys;
 using BlockChainSample.Ui.Menu;
 
 namespace BlockChainSample.Ui.Middlewares.Handlers;
@@ -9,12 +9,26 @@ public class AddInvalidTransactionMiddleware(TransactionService transactionServi
 {
   public Task<MenuResult> InvokeAsync(MenuContext context, MenuDelegate next)
   {
-    var transaction = new Transaction("me", 999999, "you");
-    transactionService.AddPending(transaction);
+    var fromWallet = context.Get<Wallet>(WalletKeys.FromWallet);
+    var toWallet = context.Get<Wallet>(WalletKeys.ToWallet);
+    var amount = context.Get<decimal>(TransactionKeys.Amount);
 
-    Console.WriteLine("Incorrect transaction added to pendings: ");
-    BlockChainDisplayService.DisplayTransaction(transaction);
-    return Task.FromResult(MenuResult.Ok());
+    var (errorMessage, transaction) = TransactionService.CreateTransaction(
+      fromWallet,
+      fromWallet.Address,
+      toWallet.Address.ToString(),
+      amount
+    );
+
+    if (errorMessage != null)
+      return Task.FromResult(MenuResult.Fail($"Error while adding transaction: {errorMessage}"));
+
+    // Modifing transactions data
+    transaction!.Ammount = 99999;
+
+    transactionService.AddPending(transaction!);
+
+    return Task.FromResult(MenuResult.Ok("Transaction added to pending list."));
   }
 }
 

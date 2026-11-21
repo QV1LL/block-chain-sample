@@ -2,35 +2,49 @@ using BlockChainSample.Helpers.DI;
 
 namespace BlockChainSample.Ui.Menu;
 
-public class Menu(ServiceContainer container)
+public class Menu
 {
-  private readonly ServiceContainer _container = container;
+  private readonly ServiceContainer _container;
   private readonly Dictionary<string, MenuItem> _items = new(StringComparer.OrdinalIgnoreCase);
   private readonly List<MenuItem> _orderedItems = [];
   private readonly List<Type> _globalMiddlewareTypes = [];
   private Func<string>? _headerProvider;
+  private int _nextAutoKey = 1;
+
+  public Menu(ServiceContainer container)
+  {
+    _container = container;
+  }
 
   public Menu SetHeader(Func<string> headerProvider)
   {
     _headerProvider = headerProvider;
-
     return this;
   }
 
   public Menu UseGlobal<TMiddleware>() where TMiddleware : IMenuMiddleware
   {
     _globalMiddlewareTypes.Add(typeof(TMiddleware));
-
     return this;
+  }
+
+  public Menu AddItem(string title, Action<MenuItem> configure)
+  {
+    var key = GetNextAvailableKey();
+    return AddItem(key, title, configure);
   }
 
   public Menu AddItem(string key, string title, Action<MenuItem> configure)
   {
+    if (int.TryParse(key, out int numericKey) && numericKey >= _nextAutoKey)
+    {
+      _nextAutoKey = numericKey + 1;
+    }
+
     var item = new MenuItem(key, title, _container);
     configure(item);
     _items[key] = item;
     _orderedItems.Add(item);
-
     return this;
   }
 
@@ -49,7 +63,8 @@ public class Menu(ServiceContainer container)
         Console.WriteLine(result.Message);
       }
 
-      if (result.ShouldExit) return;
+      if (result.ShouldExit)
+        return;
 
       if (result.ShouldPause)
       {
@@ -85,6 +100,16 @@ public class Menu(ServiceContainer container)
     }
 
     return pipeline(context);
+  }
+
+  private string GetNextAvailableKey()
+  {
+    while (_items.ContainsKey(_nextAutoKey.ToString()))
+    {
+      _nextAutoKey++;
+    }
+
+    return _nextAutoKey++.ToString();
   }
 
   private void Render()

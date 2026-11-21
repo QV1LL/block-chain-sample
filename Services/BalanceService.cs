@@ -29,7 +29,9 @@ public class BalanceService
 
     foreach (var transaction in transactions)
       if (transaction.From == address)
-        balance -= transaction.Ammount;
+        balance -= Math.Max(transaction.Ammount, 0);
+
+    Console.WriteLine($"Balance: {balance}, ammount: {ammount}");
 
     return balance >= ammount;
   }

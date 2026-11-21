@@ -4,6 +4,7 @@ using BlockChainSample.Ui.Menu;
 using BlockChainSample.Ui.Middlewares;
 using BlockChainSample.Ui.Middlewares.Handlers;
 using BlockChainSample.UI.Middlewares;
+using BlockChainSample.UI.Middlewares.Handlers;
 
 namespace BlockChainSample;
 
@@ -17,51 +18,68 @@ public class Program
     var menu = new Menu(container)
       .SetHeader(() => $"Pending transactions: {transactionService.GetPendingTransactions().Count}")
       .UseGlobal<ExceptionHandlingMiddleware>()
-      .AddItem("1", "Add transaction", item => item
+
+      .AddItem("Add transaction", item => item
         .Use<PromptFromMiddleware>()
         .Use<PromptToMiddleware>()
         .Use<PromptAmountMiddleware>()
         .Use<ResolveOrCreateTransferWalletsMiddleware>()
         .Use<AddTransactionMiddleware>())
-      .AddItem("2", "Add block", item => item
+      .AddItem("Add invalid transaction", item => item
+        .Use<PromptFromMiddleware>()
+        .Use<PromptToMiddleware>()
+        .Use<PromptAmountMiddleware>()
+        .Use<ResolveOrCreateTransferWalletsMiddleware>()
+        .Use<AddInvalidTransactionMiddleware>())
+      .AddItem("Clear pending transactions", item => item
+        .Use<ClearPendingTransactionsMiddleware>())
+      .AddItem("Get transaction by id", item => item
+        .Use<PromptTransactionIdMiddleware>()
+        .Use<GetTransactionByIdMiddleware>())
+      .AddItem("Get pending transactions", item => item
+        .Use<GetPendingTransactionsMiddleware>())
+      .AddItem("Check transaction by id", item => item
+        .Use<PromptTransactionIdMiddleware>()
+        .Use<GetPendingTransactionByIdMiddleware>()
+        .Use<CheckTransactionMiddleware>())
+      .AddItem("Check pending transactions", item => item
+        .Use<GetPendingTransactionsMiddleware>()
+        .Use<PrintSummaryForPendingTransactionsMiddleware>())
+      .AddItem("Get transactions by username", item => item
+        .Use<PromptUserTransactionsFilterMiddleware>()
+        .Use<GetTransactionsByUsernameMiddleware>())
+
+      .AddItem("Add block", item => item
         .Use<PromptTargetWalletNameMiddleware>()
         .Use<ResolveOrCreateSingleWalletMiddleware>()
         .Use<AddBlockMiddleware>())
-      .AddItem("3", "Show blockchain", item => item
+      .AddItem("Show blockchain", item => item
         .Use<ShowBlockchainMiddleware>())
-      .AddItem("4", "Get transaction by id", item => item
-        .Use<PromptTransactionIdMiddleware>()
-        .Use<GetTransactionByIdMiddleware>())
-      .AddItem("5", "Get transactions by username", item => item
-        .Use<PromptUserTransactionsFilterMiddleware>()
-        .Use<GetTransactionsByUsernameMiddleware>())
-      .AddItem("6", "Repair blockchain", item => item
+      .AddItem("Check blockchain", item => item
+        .Use<CheckBlockchainMiddleware>())
+      .AddItem("Repair blockchain", item => item
         .Use<PromptRepairStartIndexMiddleware>()
         .Use<RepairBlockchainMiddleware>())
-      .AddItem("7", "Broke random block", item => item
+      .AddItem("Broke random block", item => item
         .Use<BreakRandomBlockMiddleware>())
-      .AddItem("8", "Check blockchain", item => item
-        .Use<CheckBlockchainMiddleware>())
-      .AddItem("9", "Find wallet by name", item => item
+
+      .AddItem("Find wallet by name", item => item
         .Use<PromptTargetWalletNameMiddleware>()
         .Use<FindWalletByNameMiddleware>())
-      .AddItem("10", "Find wallet by address", item => item
+      .AddItem("Find wallet by address", item => item
         .Use<PromptWalletAddressMiddleware>()
         .Use<FindWalletByAddressMiddleware>())
-      .AddItem("11", "Print all wallets", item => item
+      .AddItem("Print all wallets", item => item
         .Use<PrintAllWalletsMiddleware>())
-      .AddItem("12", "Add invalid transaction", item => item
-        .Use<AddInvalidTransactionMiddleware>())
-      .AddItem("13", "Clear pending transactions", item => item
-        .Use<ClearPendingTransactionsMiddleware>())
-      .AddItem("14", "Check wallet balance", item => item
+      .AddItem("Check wallet balance", item => item
         .Use<PromptTargetWalletNameMiddleware>()
         .Use<ResolveOrCreateSingleWalletMiddleware>()
         .Use<CheckWalletBalanceMiddleware>())
-      .AddItem("15", "Print transactions history", item => item
+      .AddItem("Print transactions history", item => item
         .Use<PromptTargetWalletNameMiddleware>()
         .Use<ResolveOrCreateSingleWalletMiddleware>()
         .Use<PrintTransactionsHistoryMiddleware>())
+
       .AddItem("exit", "Type exit to exit", item => item
         .Use<ExitMenuMiddleware>());
 

@@ -1,5 +1,6 @@
 
 using System.Security.Cryptography;
+using System.Text;
 using BlockChainSample.Models;
 
 namespace BlockChainSample.Services;
@@ -13,6 +14,11 @@ public class TransactionService
   public List<Transaction> GetPendingTransactions()
   {
     return [.. _pendingTransactions];
+  }
+
+  public Transaction? GetTransactionById(Guid id)
+  {
+    return _pendingTransactions.FirstOrDefault(t => t.Id == id);
   }
 
   public void AddPending(Transaction transaction)
@@ -80,6 +86,9 @@ public class TransactionService
 
     if (!ecdsa.VerifyData(tx.GetDataToSign(), tx.Signature, HashAlgorithmName.SHA256))
       return (false, "Transaction signature is not correct!");
+
+    if (Convert.ToBase64String(tx.SenderPublicKey)[^10..] != tx.From)
+      return (false, "Transaction from must contains public key");
 
     return (true, string.Empty);
   }

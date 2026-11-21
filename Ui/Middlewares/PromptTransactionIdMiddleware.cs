@@ -12,6 +12,7 @@ public class PromptTransactionIdMiddleware : IMenuMiddleware
       return Task.FromResult(MenuResult.Fail("Incorrect format of guid"));
 
     context.Set(TransactionKeys.TransactionId, id);
+
     return next(context);
   }
 }
