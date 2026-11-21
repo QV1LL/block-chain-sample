@@ -13,6 +13,9 @@ public class BlockChain
   private readonly int _adjustmentInterval = 3;
   private readonly int _targetBlockTime = 1;
 
+  private readonly int _rewardCount = 50;
+  private readonly int _halvingInterval = 5;
+
   private readonly List<Transaction> _existingTransactions = [];
 
   public BlockChain(
@@ -34,7 +37,7 @@ public class BlockChain
     if (errorMessage != null)
       return $"There is an error in transaction while adding block: {errorMessage}";
 
-    var coinbaseTransaction = Transaction.CreateCoinbaseTransaction(minerAddress, 50);
+    var coinbaseTransaction = Transaction.CreateCoinbaseTransaction(minerAddress, GetCurrentReward());
 
     var lastBlock = Chain[^1];
     var newBlock = new Block
@@ -54,6 +57,13 @@ public class BlockChain
       AdjustDifficulty();
 
     return null;
+  }
+
+  public decimal GetCurrentReward()
+  {
+    int halvings = Chain.Count / _halvingInterval;
+
+    return (decimal)(_rewardCount * Math.Pow(0.5, halvings));
   }
 
   public bool IsChainValid()
