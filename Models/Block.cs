@@ -5,6 +5,7 @@ public class Block
   public int Index { get; set; }
   public DateTime TimeStamp { get; set; }
   public List<Transaction> Transactions { get; set; }
+  public List<string> TransactionHashesAtAdd { get; set; }
   public string Author { get; set; }
   public string Hash { get; set; }
   public string PreviousHash { get; set; }

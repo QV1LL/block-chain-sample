@@ -22,6 +22,12 @@ public static class BlockChainDisplayService
   {
     Console.WriteLine($" - {transaction.ToRaw()}");
   }
+
+  public static void DisplayCorruptedTransaction(Guid id, int position, string hashAtAdd, string currentHash)
+  {
+    Console.WriteLine($" --- Founded corrupted transaction with id {id} at {position}: ");
+    Console.WriteLine($"Hash at add: {hashAtAdd}, current hash: {currentHash}");
+  }
   public static void DisplayBlock(Block block)
   {
     Console.WriteLine(block);

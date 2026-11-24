@@ -14,8 +14,9 @@ public class GetTransactionByIdMiddleware(BlockChain blockChain) : IMenuMiddlewa
     if (result == null)
       return Task.FromResult(MenuResult.Fail($"Didn`t find transaction with id: {id}"));
 
-    var transaction = result.Value.transaction;
+    var (transaction, index) = result.Value;
     context.Set(TransactionKeys.Transaction, transaction);
+    context.Set(BlockchainKeys.Index, index);
 
     Console.WriteLine($"Found transaction in block {result.Value.blockIndex}: ");
     Console.WriteLine(transaction);

@@ -37,6 +37,10 @@ public class Program
       .AddItem("Get transaction by id", item => item
         .Use<PromptTransactionIdMiddleware>()
         .Use<GetTransactionByIdMiddleware>())
+      .AddItem("Modify transaction by id", item => item
+        .Use<PromptTransactionIdMiddleware>()
+        .Use<GetTransactionByIdMiddleware>()
+        .Use<ModifyTransactionByIdMiddleware>())
       .AddItem("Try add existing transaction in block chain", item => item
         .Use<PromptTransactionIdMiddleware>()
         .Use<GetTransactionByIdMiddleware>()
@@ -47,6 +51,12 @@ public class Program
         .Use<PromptTransactionIdMiddleware>()
         .Use<GetPendingTransactionByIdMiddleware>()
         .Use<CheckTransactionMiddleware>())
+      .AddItem("Verify transaction by merkle root (transaction id required)", item => item
+        .Use<PromptTransactionIdMiddleware>()
+        .Use<GetTransactionByIdMiddleware>()
+        .Use<VerifyTransactionByMerkleRootMiddleware>())
+      .AddItem("Find corrupted transactions", item => item
+        .Use<FindCorruptedTransactionsMiddleware>())
       .AddItem("Check pending transactions", item => item
         .Use<GetPendingTransactionsMiddleware>()
         .Use<PrintSummaryForPendingTransactionsMiddleware>())

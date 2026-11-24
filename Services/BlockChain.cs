@@ -1,4 +1,5 @@
 using BlockChainSample.Models;
+using BlockChainSample.Services.Display;
 
 namespace BlockChainSample.Services;
 
@@ -11,7 +12,7 @@ public class BlockChain
   private readonly BalanceService _balanceService;
 
   private readonly MemPool _memPool;
-  private readonly int _maxTransactionsPerBlock = 3;
+  private readonly int _maxTransactionsPerBlock = 8;
 
   private readonly int _adjustmentInterval = 3;
   private readonly int _targetBlockTime = 1;
@@ -64,6 +65,8 @@ public class BlockChain
       Index = lastBlock.Index + 1,
       TimeStamp = DateTime.UtcNow,
       Transactions = [coinbaseTransaction, .. batch],
+      TransactionHashesAtAdd = [_hashingService.ComputeHash(coinbaseTransaction.ToRaw()),
+                                  .. batch.Select(t => _hashingService.ComputeHash(t.ToRaw()))],
       PreviousHash = lastBlock.Hash,
       DifficultyAtMining = Difficulty
     };
@@ -81,17 +84,66 @@ public class BlockChain
     return null;
   }
 
-  public bool GetMerkleProof(Guid transactionId)
+  public List<(string Hash, bool IsLeft)>? GetMerkleProof(Guid transactionId)
   {
     var result = FindTransactionById(transactionId);
 
-    if (result == null) return false;
+    if (result == null) return null;
 
-    var block = Chain.FirstOrDefault(b => b.Index == result.Value.blockIndex);
+    var block = FindBlockByIndex(result.Value.blockIndex);
+
+    if (block == null) return null;
+
+    return _hashingService.GetMerkleProof(block.TransactionHashesAtAdd, result.Value.transaction);
+  }
+
+  public bool VerifyMerkleProof(Transaction transaction, int blockIndex, List<(string Hash, bool IsLeft)> proof)
+  {
+    var block = FindBlockByIndex(blockIndex);
 
     if (block == null) return false;
 
-    return _hashingService.ComputeMerkleRoot(block.Transactions) == block.MerkleRoot;
+    var currentHash = _hashingService.ComputeHash(transaction.ToRaw());
+
+    foreach (var (hash, isLeft) in proof)
+      currentHash = _hashingService.ComputeHash(isLeft ? hash + currentHash : currentHash + hash);
+
+    return block.MerkleRoot == currentHash;
+  }
+
+  public void FindCorruptedTransactions()
+  {
+    bool foundCorrupted = false;
+
+    foreach (var block in Chain)
+    {
+      if (block.TransactionHashesAtAdd == null || block.TransactionHashesAtAdd.Count != block.Transactions.Count)
+      {
+        BlockChainDisplayService.DisplayInfo($"Block with index {block.Index} is corrupted");
+        foundCorrupted = true;
+        continue;
+      }
+
+      for (int i = 0; i < block.Transactions.Count; i++)
+      {
+        var transaction = block.Transactions[i];
+        var hashAtAdd = block.TransactionHashesAtAdd[i];
+        var currentHash = _hashingService.ComputeHash(transaction.ToRaw());
+
+        if (hashAtAdd != currentHash)
+        {
+          foundCorrupted = true;
+          BlockChainDisplayService.DisplayCorruptedTransaction(
+              transaction.Id,
+              i,
+              hashAtAdd,
+              currentHash);
+        }
+      }
+    }
+
+    if (!foundCorrupted)
+      BlockChainDisplayService.DisplayInfo("No corrupted transactions found.");
   }
 
   public decimal GetCurrentReward()
@@ -286,6 +338,7 @@ public class BlockChain
       Index = 0,
       TimeStamp = DateTime.UtcNow,
       Transactions = [],
+      TransactionHashesAtAdd = [],
       PreviousHash = "0",
       DifficultyAtMining = Difficulty
     };
