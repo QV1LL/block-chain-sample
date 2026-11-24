@@ -11,6 +11,7 @@ public class Transaction(string from, decimal ammount, string to)
   public byte[] SenderPublicKey { get; set; }
   public byte[]? Signature { get; set; }
   public DateTime TimeStamp { get; set; } = DateTime.Now;
+  public DateTime AddedAt { get; set; }
   public bool IsCoinBase { get; set; } = false;
 
   public static Transaction CreateCoinbaseTransaction(string to, decimal ammount)

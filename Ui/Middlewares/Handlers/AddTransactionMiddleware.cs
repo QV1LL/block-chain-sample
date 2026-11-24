@@ -5,7 +5,7 @@ using BlockChainSample.Ui.Menu;
 
 namespace BlockChainSample.Ui.Middlewares.Handlers;
 
-public class AddTransactionMiddleware(TransactionService transactionService) : IMenuMiddleware
+public class AddTransactionMiddleware(BlockChain blockChain) : IMenuMiddleware
 {
   public Task<MenuResult> InvokeAsync(MenuContext context, MenuDelegate next)
   {
@@ -23,7 +23,10 @@ public class AddTransactionMiddleware(TransactionService transactionService) : I
     if (errorMessage != null)
       return Task.FromResult(MenuResult.Fail($"Error while adding transaction: {errorMessage}"));
 
-    transactionService.AddPending(transaction!);
+    var result = blockChain.AddTransaction(transaction!);
+
+    if (result != null)
+      return Task.FromResult(MenuResult.Fail($"Error while adding transaction: {result}"));
 
     return Task.FromResult(MenuResult.Ok("Transaction added to pending list."));
   }

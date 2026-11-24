@@ -1,13 +1,13 @@
-using BlockChainSample.Services;
+using BlockChainSample.Models;
 using BlockChainSample.Ui.Menu;
 
 namespace BlockChainSample.Ui.Middlewares.Handlers;
 
-public class ClearPendingTransactionsMiddleware(TransactionService transactionService) : IMenuMiddleware
+public class ClearPendingTransactionsMiddleware(MemPool memPool) : IMenuMiddleware
 {
   public Task<MenuResult> InvokeAsync(MenuContext context, MenuDelegate next)
   {
-    transactionService.ClearPending();
+    memPool.RemoveTransaction(memPool.Pending);
     return Task.FromResult(MenuResult.Ok("Pending transaction cleared!"));
   }
 }

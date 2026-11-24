@@ -1,18 +1,15 @@
-using BlockChainSample.Services;
+using BlockChainSample.Models;
 using BlockChainSample.Ui.Keys;
 using BlockChainSample.Ui.Menu;
 
 namespace BlockChainSample.Ui.Middlewares.Handlers;
 
-public class GetPendingTransactionsMiddleware(TransactionService transactionService) : IMenuMiddleware
+public class GetPendingTransactionsMiddleware(MemPool memPool) : IMenuMiddleware
 {
   public Task<MenuResult> InvokeAsync(MenuContext context, MenuDelegate next)
   {
-    var transactions = transactionService.GetPendingTransactions();
-
-    context.Set(TransactionKeys.Pending, transactions);
-    Console.WriteLine("Pending transactions: ");
-    Console.WriteLine(string.Join('\n', transactions));
+    context.Set(TransactionKeys.Pending, memPool.Pending.ToList());
+    Console.WriteLine(memPool);
 
     return next(context);
   }

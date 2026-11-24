@@ -10,6 +10,9 @@ public class BlockChain
   private readonly MiningService _miningService;
   private readonly BalanceService _balanceService;
 
+  private readonly MemPool _memPool;
+  private readonly int _maxTransactionsPerBlock = 3;
+
   private readonly int _adjustmentInterval = 3;
   private readonly int _targetBlockTime = 1;
 
@@ -21,18 +24,34 @@ public class BlockChain
   public BlockChain(
       HashingService hashingService,
       MiningService miningService,
-      BalanceService balanceService)
+      BalanceService balanceService,
+      MemPool memPool)
   {
     _hashingService = hashingService;
     _miningService = miningService;
     _balanceService = balanceService;
+    _memPool = memPool;
 
     AddGenesysBlock();
   }
 
-  public string? AddBlock(List<Transaction> transactions, string minerAddress)
+  public string? AddTransaction(Transaction transaction)
   {
-    var errorMessage = ValidateTransactions(transactions);
+    var result = ValidateTransaction(transaction, _memPool.Pending);
+
+    if (result != null) return result;
+
+    result = _memPool.AddTransaction(transaction);
+
+    if (result != null) return result;
+
+    return null;
+  }
+
+  public string? MinePending(string minerAddress)
+  {
+    var batch = _memPool.Peek(_maxTransactionsPerBlock);
+    var errorMessage = ValidateTransactions(batch);
 
     if (errorMessage != null)
       return $"There is an error in transaction while adding block: {errorMessage}";
@@ -44,19 +63,35 @@ public class BlockChain
     {
       Index = lastBlock.Index + 1,
       TimeStamp = DateTime.UtcNow,
-      Transactions = [coinbaseTransaction, .. transactions],
+      Transactions = [coinbaseTransaction, .. batch],
       PreviousHash = lastBlock.Hash,
       DifficultyAtMining = Difficulty
     };
 
+    newBlock.MerkleRoot = _hashingService.ComputeMerkleRoot(newBlock.Transactions);
     _miningService.MineBlock(newBlock, Difficulty);
     Chain.Add(newBlock);
-    _existingTransactions.AddRange([.. transactions]);
+
+    _existingTransactions.AddRange([.. batch]);
+    _memPool.RemoveTransaction(batch);
 
     if (newBlock.Index % _adjustmentInterval == 0)
       AdjustDifficulty();
 
     return null;
+  }
+
+  public bool GetMerkleProof(Guid transactionId)
+  {
+    var result = FindTransactionById(transactionId);
+
+    if (result == null) return false;
+
+    var block = Chain.FirstOrDefault(b => b.Index == result.Value.blockIndex);
+
+    if (block == null) return false;
+
+    return _hashingService.ComputeMerkleRoot(block.Transactions) == block.MerkleRoot;
   }
 
   public decimal GetCurrentReward()
@@ -73,6 +108,9 @@ public class BlockChain
       var currentBlock = Chain[i];
       var previousBlock = Chain[i - 1];
 
+      if (currentBlock.Index == 0)
+        continue;
+
       if (currentBlock.Hash != _hashingService.ComputeHash(currentBlock))
         return false;
 
@@ -81,8 +119,16 @@ public class BlockChain
 
       if (currentBlock.Hash[..currentBlock.DifficultyAtMining] != new string('0', currentBlock.DifficultyAtMining))
         return false;
+
+      if (currentBlock.MerkleRoot != _hashingService.ComputeMerkleRoot(currentBlock.Transactions))
+        return false;
     }
     return true;
+  }
+
+  public bool IsTransactionInChain(Guid id)
+  {
+    return _existingTransactions.Any(et => et.Id == id);
   }
 
   public (Block, string)? FindFirstInvalidBlock()
@@ -199,7 +245,7 @@ public class BlockChain
     if (!isValid)
       return errorMessage;
 
-    if (_existingTransactions.Any(t => t.Id == transaction.Id))
+    if (IsTransactionInChain(transaction.Id))
       return $"Transaction with id {transaction.Id} is already exists";
 
     if (_existingTransactions.Contains(transaction))
@@ -244,6 +290,7 @@ public class BlockChain
       DifficultyAtMining = Difficulty
     };
 
+    genesysBlock.MerkleRoot = _hashingService.ComputeMerkleRoot(genesysBlock.Transactions);
     _miningService.MineBlock(genesysBlock, Difficulty);
     Chain.Add(genesysBlock);
   }

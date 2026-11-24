@@ -8,8 +8,7 @@ public class HashingService
 {
   public string ComputeHash(Block block, int? nonce = null)
   {
-    var transactionRawData = string.Concat(block.Transactions.Select(t => t.ToRaw()));
-    var blockData = $"{block.Index}{block.TimeStamp}{block.DifficultyAtMining}{transactionRawData}{block.PreviousHash}{nonce ?? block.Nonce}";
+    var blockData = $"{block.Index}{block.TimeStamp}{block.DifficultyAtMining}{block.MerkleRoot}{block.PreviousHash}{nonce ?? block.Nonce}";
 
     return ComputeHash(blockData);
   }
@@ -21,5 +20,33 @@ public class HashingService
     var hashBytes = sha256.ComputeHash(bytes);
 
     return Convert.ToBase64String(hashBytes).Replace("-", "").ToLower();
+  }
+
+  public string ComputeMerkleRoot(List<Transaction> transactions)
+  {
+    if (transactions == null || transactions.Count == 0)
+      return string.Empty;
+
+    var hashes = transactions.Select(t => ComputeHash(t.ToRaw())).ToList();
+
+    while (hashes.Count > 1)
+    {
+      var newHashes = new List<string>();
+
+      for (int i = 0; i < hashes.Count; i += 2)
+      {
+        if (i + 1 < hashes.Count)
+        {
+          var combinedHash = ComputeHash(hashes[i] + hashes[i + 1]);
+          newHashes.Add(combinedHash);
+        }
+        else
+          newHashes.Add(hashes[i]);
+      }
+
+      hashes = newHashes;
+    }
+
+    return hashes[0];
   }
 }

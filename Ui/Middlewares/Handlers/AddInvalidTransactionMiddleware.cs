@@ -5,7 +5,7 @@ using BlockChainSample.Ui.Menu;
 
 namespace BlockChainSample.Ui.Middlewares.Handlers;
 
-public class AddInvalidTransactionMiddleware(TransactionService transactionService) : IMenuMiddleware
+public class AddInvalidTransactionMiddleware(MemPool memPool) : IMenuMiddleware
 {
   public Task<MenuResult> InvokeAsync(MenuContext context, MenuDelegate next)
   {
@@ -26,7 +26,7 @@ public class AddInvalidTransactionMiddleware(TransactionService transactionServi
     // Modifing transactions data
     transaction!.Ammount = 99999;
 
-    transactionService.AddPending(transaction!);
+    memPool.AddTransaction(transaction);
 
     return Task.FromResult(MenuResult.Ok("Transaction added to pending list."));
   }

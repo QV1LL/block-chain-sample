@@ -9,6 +9,7 @@ public class Block
   public string Hash { get; set; }
   public string PreviousHash { get; set; }
   public int Nonce { get; set; }
+  public string MerkleRoot { get; set; }
   public double MiningDuration { get; set; }
   public int DifficultyAtMining { get; set; }
 
@@ -20,6 +21,7 @@ public class Block
     Previous Hash: {PreviousHash}
     Hash: {Hash}
     Nonce: {Nonce}
+    Merkle root: {MerkleRoot}
     Difficulty at mining: {DifficultyAtMining}
     Mining duration: {MiningDuration} seconds
     Transactions:

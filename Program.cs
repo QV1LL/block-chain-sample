@@ -1,4 +1,5 @@
 ﻿using BlockChainSample.Helpers.DI;
+using BlockChainSample.Models;
 using BlockChainSample.Services;
 using BlockChainSample.Ui.Menu;
 using BlockChainSample.Ui.Middlewares;
@@ -13,10 +14,10 @@ public class Program
   public static async Task Main()
   {
     var container = ConfigureServices();
-    var transactionService = container.Resolve<TransactionService>();
+    var memPool = container.Resolve<MemPool>();
 
     var menu = new Menu(container)
-      .SetHeader(() => $"Pending transactions: {transactionService.GetPendingTransactions().Count}")
+      .SetHeader(() => $"Pending transactions: {memPool.Count}")
       .UseGlobal<ExceptionHandlingMiddleware>()
 
       .AddItem("Add transaction", item => item
@@ -36,6 +37,10 @@ public class Program
       .AddItem("Get transaction by id", item => item
         .Use<PromptTransactionIdMiddleware>()
         .Use<GetTransactionByIdMiddleware>())
+      .AddItem("Try add existing transaction in block chain", item => item
+        .Use<PromptTransactionIdMiddleware>()
+        .Use<GetTransactionByIdMiddleware>()
+        .Use<TryToAddExistingTransactionMiddleware>())
       .AddItem("Get pending transactions", item => item
         .Use<GetPendingTransactionsMiddleware>())
       .AddItem("Check transaction by id", item => item
@@ -94,9 +99,9 @@ public class Program
     container.RegisterTransient<MiningService, MiningService>();
     container.RegisterTransient<BalanceService, BalanceService>();
 
-    container.RegisterSingleton<TransactionService, TransactionService>();
     container.RegisterSingleton<WalletService, WalletService>();
     container.RegisterSingleton<BlockChain, BlockChain>();
+    container.RegisterSingleton<MemPool, MemPool>();
 
     return container;
   }

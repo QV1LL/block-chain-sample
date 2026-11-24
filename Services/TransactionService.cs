@@ -4,53 +4,8 @@ using BlockChainSample.Models;
 
 namespace BlockChainSample.Services;
 
-public class TransactionService
+public static class TransactionService
 {
-  private readonly List<Transaction> _pendingTransactions = [];
-
-  public int PendingCount => _pendingTransactions.Count;
-
-  public List<Transaction> GetPendingTransactions()
-  {
-    return [.. _pendingTransactions];
-  }
-
-  public Transaction? GetTransactionById(Guid id)
-  {
-    return _pendingTransactions.FirstOrDefault(t => t.Id == id);
-  }
-
-  public void AddPending(Transaction transaction)
-  {
-    ArgumentNullException.ThrowIfNull(transaction);
-    _pendingTransactions.Add(transaction);
-  }
-
-  public (bool isAdded, string? errorMessage) CreateAndAddPending(Wallet sender, string from, string to, decimal amount)
-  {
-    var (errorMessage, transaction) = CreateTransaction(sender, from, to, amount);
-
-    if (errorMessage != null || transaction == null)
-      return (false, errorMessage ?? "Failed to create transaction.");
-
-    _pendingTransactions.Add(transaction);
-    return (true, null);
-  }
-
-  public bool RemovePending(Guid transactionId)
-  {
-    var transaction = _pendingTransactions.FirstOrDefault(t => t.Id == transactionId);
-    if (transaction == null)
-      return false;
-
-    return _pendingTransactions.Remove(transaction);
-  }
-
-  public void ClearPending()
-  {
-    _pendingTransactions.Clear();
-  }
-
   public static (string? errorMessage, Transaction? transaction) CreateTransaction(Wallet sender, string from, string to, decimal ammount)
   {
     var transaction = new Transaction(from, ammount, to)
